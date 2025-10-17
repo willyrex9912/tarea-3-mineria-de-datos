@@ -1,0 +1,57 @@
+---
+title: "R Notebook - Willy Ardiano - 999017224 - Tarea 3 - Minería de datos"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+Repositorio de github: https://github.com/willyrex9912/tarea-3-mineria-de-datos.git
+
+Instalando dependencias y leyendo archivo
+```{r}
+library(readxl)
+data <- read_excel("base-de-datos-violencia-intrafamiliar-ano-2024_v3.xlsx")
+
+#Quitanto y dejando solo las columnas a revisar
+data.frame(1:ncol(data), colnames(data))
+datos <- data[,c('HEC_MES', 'HEC_DEPTO', 'VIC_SEXO','VIC_EDAD', 'VIC_ESCOLARIDAD', 'VIC_EST_CIV', 'VIC_TRABAJA', 'VIC_DISC', 'AGR_SEXO', 'AGR_EDAD', 'AGR_ESCOLARIDAD', 'AGR_TRABAJA', 'AGR_OCUP', 'AGR_DEDICA')]
+```
+
+Filtrando por departamento de San Marcos
+```{r}
+datos_dep_12 <- subset(datos, HEC_DEPTO == 12)
+# Limpiando el set de datos de San Marcos quitando la columna de departamento
+data.frame(1:ncol(datos_dep_12), colnames(datos_dep_12))
+datos_dep_12 <- datos_dep_12[,-2]
+```
+
+
+Aplicando algoritmo para encontrar reglas
+```{r}
+library(arules)
+reglas_12 <- fim4r(datos_dep_12, method = "fpgrowth", target = "rules", support = 0.2, confidence = 0.5)
+reglas_12_df <- as(reglas_12, Class = 'data.frame')
+```
+
+Patron 1: El primer patrón que puedo observar al filtrar los datos por el departamento 12 (San Marcos) es "VIC_DISC=[2,9]"
+Parece ser que la mayor parte de víctimas no tienen una discapacidad. Por un lado es bueno porque significa que las agresiones
+no tienen nada que ver con la discapacidad de alguien, en caso contrario sería información muy trágica.
+Si bien es cierto que no parece haber relevancia con las personas que tienen discapacidad, tampoco significa que no exista.
+Queda abierta la posibilidad de que alguna persona con discapacidad reciba alguna agresión.
+
+Patron 2: El segundo patron que puedo observar es "VIC_EST_CIV=[2,9]". Por el diccionario de datos podemos deducir que 
+la mayor parte de víctimas que sufren algún tipo de agresión son personas que se han casado o unido con otra persona.
+Eso es intersante porque nos dice que los solteros en gran gran porcentage no sufren de algún tipo de agresión, al menos
+no en los registros que se han registrado.
+
+Patron 3: El tercer patrón que puedo observar es "VIC_TRABAJA=[2,9],AGR_TRABAJA=[1,9]". Al parecer las víctimas son personas
+que no trabajan por un salario o ingreso mientras que los agresores son personas que si trabajan por un salario.
+Esto parece lógico al pensar que muchas veces los problemas familiares surgen debido a problemas económicas o discusiones sobre temas
+económicos que se puedan dar. Por lo que estadísticamente se puede fundamentar que una persona tiene más riesgo de sufrir algún tipo
+de agresión si no cuenta con un trabajo que le permita obtener un sueldo o salario.
+
+Patron 4: Me parece muy muy interesante el patron "VIC_SEXO=[1,2]". Esperaba encontrar una tendencia de violencia contra la mujer, pero
+es interesante que al observar la mayor parte de reglas y patrones indican que las agresiones se dan tanto en hombres como en mujeres.
+De hecho me surgió la duda sobre si es cierto y revisé los registros, y es interesante porque en efecto los registros de hombres y mujeres
+están bastante nivelados. Confirma los calculos arrojados por el algoritmo al menos en los datos del departamento de San Marcos.
